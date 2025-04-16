@@ -1,10 +1,11 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
-import Settings from './pages/Settings';
 import Students from './pages/Students';
 import Grades from './pages/Grades';
+import CourseRegistration from './pages/CourseRegistration';
+import Layout from './components/Layout';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 
@@ -28,11 +29,40 @@ function App() {
       <CssBaseline />
       <Router>
         <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/students" element={<Students />} />
-          <Route path="/grades" element={<Grades />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route
+            path="/dashboard"
+            element={
+              <Layout>
+                <Dashboard />
+              </Layout>
+            }
+          />
+          <Route
+            path="/students"
+            element={
+              <Layout>
+                <Students />
+              </Layout>
+            }
+          />
+          <Route
+            path="/grades"
+            element={
+              <Layout>
+                <Grades />
+              </Layout>
+            }
+          />
+          <Route
+            path="/course-registration"
+            element={
+              <Layout>
+                <CourseRegistration />
+              </Layout>
+            }
+          />
         </Routes>
       </Router>
     </ThemeProvider>

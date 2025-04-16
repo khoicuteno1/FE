@@ -1,219 +1,348 @@
 import React, { useState, useEffect } from 'react';
-import { FormControl, InputLabel, MenuItem, Select, TextField, Button, Grid } from '@mui/material';
+import {
+  Box,
+  Container,
+  Paper,
+  Typography,
+  TextField,
+  Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  InputAdornment
+} from '@mui/material';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Search as SearchIcon,
+} from '@mui/icons-material';
+import Sidebar from '../components/Sidebar';
 
-const GradeInput = () => {
+const Students = () => {
   const [students, setStudents] = useState([]);
-  const [monhocs, setMonhocs] = useState([]);
-  const [selectedMonHoc, setSelectedMonHoc] = useState('');
-  const [selectedStudent, setSelectedStudent] = useState('');
-  const [gradeCC, setGradeCC] = useState('');
-  const [gradeGK, setGradeGK] = useState('');
-  const [gradeCK, setGradeCK] = useState('');
-  const [finalGrade, setFinalGrade] = useState('');
-
-  const [errors, setErrors] = useState({
-    CC: false,
-    GK: false,
-    CK: false,
+  const [lops, setLops] = useState([]);
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [formData, setFormData] = useState({
+    id: '',
+    name: '',
+    class: '',
+    gender: '',
+    email: '',
   });
 
-  const validate = (value) => {
-    const number = parseFloat(value);
-    return !isNaN(number) && number >= 0 && number <= 10;
+  const handleOpenDialog = (student = null) => {
+    if (student) {
+      setFormData({
+        id: student.MaSV,
+        name: student.HoTen,
+        class: student.MaLop,
+        gender: student.GioiTinh,
+        email: student.Email,
+      });
+      setSelectedStudent(student);
+    } else {
+      setFormData({
+        id: '',
+        name: '',
+        class: '',
+        gender: '',
+        email: '',
+      });
+      setSelectedStudent(null);
+    }
+    setOpenDialog(true);
   };
 
-  // Lấy danh sách môn học và sinh viên ban đầu
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setSelectedStudent(null);
+  };
+
+  const filteredStudents = students.filter((student) =>
+    Object.values(student).some((value) =>
+      value.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  );
+
   useEffect(() => {
-    fetch('https://be1-fizs.onrender.com/monhoc')
-      .then((response) => response.json())
-      .then((data) => setMonhocs(data));
+    const fetchSinhvien = async () => {
+      try {
+        const response = await fetch('https://be1-fizs.onrender.com/sinhvien');
+        const data = await response.json();
+        setStudents(data);
+      } catch (error) {
+        console.error('Lỗi khi tải dữ liệu sinh viên:', error);
+      }
+    };
+    const fetchLops = async () => {
+      try {
+        const response = await fetch('https://be1-fizs.onrender.com/lop');
+        const data = await response.json();
+        setLops(data);
+      } catch (error) {
+        console.error('Lỗi khi tải dữ liệu lớp:', error);
+      }
+    };
+    fetchLops();
+    fetchSinhvien();
   }, []);
 
-  // Khi môn học được chọn, lấy danh sách sinh viên học môn học đó
-  useEffect(() => {
-    if (selectedMonHoc) {
-      fetch(`https://be1-fizs.onrender.com/sinhvien/${selectedMonHoc}`)
-        .then((response) => response.json())
-        .then((data) => setStudents(data));
-    }
-  }, [selectedMonHoc]);
-
-  useEffect(() => {
-    if (selectedStudent && selectedMonHoc) {
-      fetch(`https://be1-fizs.onrender.com/diem/${selectedStudent}/${selectedMonHoc}`)
-        .then((response) => response.json())
-        .then((data) => {
-          setGradeCC(data.DiemCC || '');
-          setGradeGK(data.DiemGK || '');
-          setGradeCK(data.DiemCK || '');
-          setFinalGrade(calculateFinalGrade(data.DiemCC, data.DiemGK, data.DiemCK));
-        });
-    }
-  }, [selectedStudent, selectedMonHoc]);
-  
-  const calculateFinalGrade = (cc, gk, ck) => {
-    const c = parseFloat(cc) || 0;
-    const g = parseFloat(gk) || 0;
-    const k = parseFloat(ck) || 0;
-    return ((c * 0.1 + g * 0.3 + k * 0.6).toFixed(2)).toString();
-  };
-  
-
-  const handleGradeChange = (e, type) => {
-    const value = e.target.value;
-
-    const isValid = validate(value);
-    setErrors(prev => ({ ...prev, [type]: !isValid }));
-    const floatValue = parseFloat(value);
-    const safeValue = isNaN(floatValue) ? '' : floatValue;
-
-    if (type === 'CC') setGradeCC(safeValue);
-    if (type === 'GK') setGradeGK(safeValue);
-    if (type === 'CK') setGradeCK(safeValue);
-  };
-
-  
-  useEffect(() => {
-    const cc = parseFloat(gradeCC) || 0;
-    const gk = parseFloat(gradeGK) || 0;
-    const ck = parseFloat(gradeCK) || 0;
-    const isAllValid = [cc, gk, ck].every(score => score >= 0 && score <= 10);
-    if (isAllValid) {
-      const tongKet = (cc * 0.2 + gk * 0.3 + ck * 0.5).toFixed(2);
-      setFinalGrade(tongKet);
-    } else {
-      setFinalGrade('');
-    }
-  }, [gradeCC, gradeGK, gradeCK]);
-
-  const handleSave = () => {
-    const ccValid = validate(gradeCC);
-    const gkValid = validate(gradeGK);
-    const ckValid = validate(gradeCK);
-  
-    setErrors({
-      CC: !ccValid,
-      GK: !gkValid,
-      CK: !ckValid,
-    });
-  
-    if (!ccValid || !gkValid || !ckValid) {
-      alert("Vui lòng nhập đầy đủ điểm hợp lệ từ 0 đến 10");
-      return;
-    }
-  
-    const data = {
-      DiemCC: gradeCC,
-      DiemGK: gradeGK,
-      DiemCK: gradeCK,
+  const handleSubmit = async () => {
+    const newStudent = {
+        MaSV: formData.id,
+        HoTen: formData.name,
+        MaLop: formData.class,
+        GioiTinh: formData.gender,
+        Email: formData.email,
     };
-  
-    fetch(`https://be1-fizs.onrender.com/diem/${selectedStudent}/${selectedMonHoc}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-      .then((response) => response.json())
-      .then(() => {
-        alert('Điểm đã được lưu');
+
+    try {
+        if (selectedStudent) {
+            const response = await fetch(`https://be1-fizs.onrender.com/sinhvien/${formData.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(newStudent),
+            });
+
+            if (!response.ok) throw new Error('Cập nhật thất bại');
+
+            setStudents((prev) =>
+                prev.map((s) => (s.MaSV === selectedStudent.MaSV ? newStudent : s))
+            );
+        } else {
+            const response = await fetch('https://be1-fizs.onrender.com/SinhVien', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(newStudent),
+            });
+
+            if (!response.ok) throw new Error('Thêm thất bại');
+
+            const created = await response.json();
+
+            setStudents((prev) => [...prev, created]);
+        }
+
+        const updatedResponse = await fetch('https://be1-fizs.onrender.com/sinhvien');
+        if (updatedResponse.ok) {
+            const updatedStudents = await updatedResponse.json();
+            setStudents(updatedStudents);
+        }
+
+        handleCloseDialog();
+    } catch (error) {
+        console.error('Lỗi khi lưu sinh viên:', error);
+        alert('Có lỗi xảy ra khi lưu thông tin sinh viên!');
+    }
+};
+
+const handleDelete = (MaSV) => {
+  // Yêu cầu người dùng xác nhận trước khi xóa
+  const confirmDelete = window.confirm("Bạn chắc chắn muốn xóa sinh viên này?(Nếu xóa là sẽ xóa hết điểm liên quan đến sinh viên)");
+
+  if (confirmDelete) {
+      // Nếu người dùng xác nhận, gửi yêu cầu DELETE đến API
+      fetch(`https://be1-fizs.onrender.com/${MaSV}?confirm=true`, {
+          method: 'DELETE',
+      })
+      .then(response => response.json())
+      .then(data => {
+          if (data.message === 'Xóa sinh viên thành công') {
+              setStudents((prevStudents) =>
+                  prevStudents.filter(student => student.MaSV !== MaSV)
+              );
+              alert('Sinh viên đã được xóa');
+          } else {
+              alert(data.message);
+          }
+      })
+      .catch((error) => {
+          console.error('Error deleting student:', error);
+          alert('Có lỗi xảy ra khi xóa sinh viên.');
       });
-  };
-  
+  } else {
+      // Nếu người dùng không xác nhận, không làm gì cả
+      alert('Hủy bỏ thao tác xóa.');
+  }
+};
+
   return (
-    <div>
-      <Grid container spacing={2}>
-        {/* Dropdown chọn môn học */}
-        <Grid item xs={12}>
-          <FormControl fullWidth>
-            <InputLabel>Chọn Môn Học</InputLabel>
-            <Select
-              value={selectedMonHoc}
-              onChange={(e) => setSelectedMonHoc(e.target.value)}
-              label="Chọn Môn Học"
+    <Box sx={{ display: 'flex' }}>
+      <Sidebar />
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          p: 3,
+          ml: '240px',
+          bgcolor: '#f5f5f5',
+          minHeight: '100vh',
+        }}
+      >
+        <Container maxWidth="lg">
+          <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h4" sx={{ fontWeight: 600, color: '#1a2f4d' }}>
+              Danh sách sinh viên
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => handleOpenDialog()}
+              sx={{ bgcolor: '#2196F3', '&:hover': { bgcolor: '#1976D2' } }}
             >
-              {monhocs.map((monhoc) => (
-                <MenuItem key={monhoc.MaMon} value={monhoc.MaMH}>
-                  {monhoc.TenMH}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Grid>
+              Thêm sinh viên
+            </Button>
+          </Box>
 
-        {/* Dropdown chọn sinh viên chỉ hiển thị khi môn học đã được chọn */}
-        {selectedMonHoc && (
-          <Grid item xs={12}>
-            <FormControl fullWidth>
-              <InputLabel>Chọn Sinh Viên</InputLabel>
-              <Select
-                value={selectedStudent}
-                onChange={(e) => setSelectedStudent(e.target.value)}
-                label="Chọn Sinh Viên"
-              >
-                {students.map((student) => (
-                  <MenuItem key={student.MaSV} value={student.MaSV}>
-                    {student.HoTen}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-        )}
+          <Paper sx={{ p: 2, mb: 3 }}>
+            <TextField
+              fullWidth
+              variant="outlined"
+              placeholder="Tìm kiếm sinh viên..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ mb: 2 }}
+            />
 
-        {/* Các trường nhập điểm */}
-        <Grid item xs={4}>
-        <TextField
-          label="Điểm Chuyên Cần"
-          value={gradeCC}
-          onChange={(e) => handleGradeChange(e, 'CC')}
-          fullWidth
-          type="number"
-          error={errors.CC}
-          helperText={errors.CC ? 'Điểm phải từ 0 đến 10' : ''}
-        />
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Mã SV</TableCell>
+                    <TableCell>Họ và tên</TableCell>
+                    <TableCell>Lớp</TableCell>
+                    <TableCell>Giới tính</TableCell>
+                    <TableCell>Email</TableCell>
+                    <TableCell align="center">Thao tác</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredStudents.map((student) => (
+                    <TableRow key={student.MaSV}>
+                      <TableCell>{student.MaSV}</TableCell>
+                      <TableCell>{student.HoTen}</TableCell>
+                      <TableCell>{student.MaLop}</TableCell>
+                      <TableCell>{student.GioiTinh}</TableCell>
+                      <TableCell>{student.Email}</TableCell>
+                      <TableCell align="center">
+                        <IconButton color="primary" onClick={() => handleOpenDialog(student)}>
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton color="error" onClick={() => handleDelete(student.MaSV)}>
+                          <DeleteIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Paper>
+        </Container>
 
-      </Grid>
-      <Grid item xs={4}>
-      <TextField
-        label="Điểm Giữa Kỳ"
-        value={gradeGK}
-        onChange={(e) => handleGradeChange(e, 'GK')}
-        fullWidth
-        type="number"
-        error={errors.GK}
-        helperText={errors.GK ? 'Điểm phải từ 0 đến 10' : ''}
-      />
-      </Grid>
-      <Grid item xs={4}>
-      <TextField
-        label="Điểm Cuối Kỳ"
-        value={gradeCK}
-        onChange={(e) => handleGradeChange(e, 'CK')}
-        fullWidth
-        type="number"
-        error={errors.CK}
-        helperText={errors.CK ? 'Điểm phải từ 0 đến 10' : ''}
-      />
-      </Grid>
-      <Grid item xs={12}>
-        <TextField
-          label="Điểm Tổng Kết"
-          value={finalGrade}
-          fullWidth
-          disabled
-        />
-      </Grid>
+        <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+          <DialogTitle>{selectedStudent ? 'Chỉnh sửa sinh viên' : 'Thêm sinh viên mới'}</DialogTitle>
+          <DialogContent>
+            <Box sx={{ mt: 2 }}>
 
-        <Grid item xs={12}>
-          <Button variant="contained" onClick={handleSave}>
-            Lưu Điểm
-          </Button>
-        </Grid>
-      </Grid>
-    </div>
+
+              <TextField
+                fullWidth
+                label="Mã sinh viên"
+                value={formData.id.replace(/^DH/, '')} // chỉ hiển thị phần số
+                onChange={(e) => {
+                  const so = e.target.value.replace(/\D/g, ''); // chỉ cho phép số
+                  setFormData({ ...formData, 
+                    id: `DH${so}`,
+                    email: `${`DH${so}`.toLowerCase()}@student.stu.edu.vn`, });  // lưu lại với tiền tố DH
+                }}
+                margin="normal"
+                required
+                disabled={selectedStudent}
+                InputProps={{
+                  startAdornment: <InputAdornment position="start">DH</InputAdornment>,
+                }}
+              />
+
+
+              <TextField
+                fullWidth
+                label="Họ và tên"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                margin="normal"
+                required
+              />
+              <FormControl fullWidth margin="normal" required>
+                <InputLabel>Lớp</InputLabel>
+                <Select
+                  value={formData.class}
+                  onChange={(e) => setFormData({ ...formData, class: e.target.value })}
+                  label="Lớp"
+                >
+                  {lops.map((lop) => (
+                    <MenuItem key={lop.MaLop} value={lop.MaLop}>
+                      {lop.TenLop}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl fullWidth margin="normal" required>
+                <InputLabel>Giới tính</InputLabel>
+                <Select
+                  value={formData.gender}
+                  onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                  label="Giới tính"
+                >
+                  <MenuItem value="Nam">Nam</MenuItem>
+                  <MenuItem value="Nữ">Nữ</MenuItem>
+                </Select>
+              </FormControl>
+              <TextField
+                fullWidth
+                label="Email"
+                value={formData.email}
+                margin="normal"
+                disabled // không cho nhập tay
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseDialog}>Hủy</Button>
+            <Button variant="contained" onClick={handleSubmit} color="primary">
+              Lưu
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
+    </Box>
   );
 };
 
-export default GradeInput;
+export default Students;

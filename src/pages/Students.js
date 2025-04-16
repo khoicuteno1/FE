@@ -21,7 +21,7 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  InputAdornment,
+  InputAdornment
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -43,7 +43,6 @@ const Students = () => {
     class: '',
     gender: '',
     email: '',
-    phone: '',
   });
 
   const handleOpenDialog = (student = null) => {
@@ -54,7 +53,6 @@ const Students = () => {
         class: student.MaLop,
         gender: student.GioiTinh,
         email: student.Email,
-        phone: student.SoDT,
       });
       setSelectedStudent(student);
     } else {
@@ -64,7 +62,6 @@ const Students = () => {
         class: '',
         gender: '',
         email: '',
-        phone: '',
       });
       setSelectedStudent(null);
     }
@@ -75,9 +72,6 @@ const Students = () => {
     setOpenDialog(false);
     setSelectedStudent(null);
   };
-
-
-  
 
   const filteredStudents = students.filter((student) =>
     Object.values(student).some((value) =>
@@ -108,13 +102,6 @@ const Students = () => {
     fetchSinhvien();
   }, []);
 
-  const convertToVietnamDate = (utcDate) => {
-    const date = new Date(utcDate);
-    const vnDate = new Date(date.getTime() + 7 * 60 * 60 * 1000);
-    return vnDate.toLocaleDateString();
-  };
-
-  //AddOrUpdate 
   const handleSubmit = async () => {
     const newStudent = {
         MaSV: formData.id,
@@ -122,12 +109,10 @@ const Students = () => {
         MaLop: formData.class,
         GioiTinh: formData.gender,
         Email: formData.email,
-        SoDT: formData.phone,
     };
 
     try {
         if (selectedStudent) {
-            // Cập nhật sinh viên (PUT)
             const response = await fetch(`https://be1-fizs.onrender.com/sinhvien/${formData.id}`, {
                 method: 'PUT',
                 headers: {
@@ -138,13 +123,11 @@ const Students = () => {
 
             if (!response.ok) throw new Error('Cập nhật thất bại');
 
-            // Cập nhật lại danh sách trong state
             setStudents((prev) =>
                 prev.map((s) => (s.MaSV === selectedStudent.MaSV ? newStudent : s))
             );
         } else {
-            // Thêm sinh viên mới (POST)
-            const response = await fetch('https://be1-fizs.onrender.com/sinhvien', {
+            const response = await fetch('https://be1-fizs.onrender.com/SinhVien', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -156,11 +139,9 @@ const Students = () => {
 
             const created = await response.json();
 
-            // Thêm vào danh sách hiện tại
             setStudents((prev) => [...prev, created]);
         }
 
-        // Optional: Fetch the updated list of students
         const updatedResponse = await fetch('https://be1-fizs.onrender.com/sinhvien');
         if (updatedResponse.ok) {
             const updatedStudents = await updatedResponse.json();
@@ -174,28 +155,36 @@ const Students = () => {
     }
 };
 
-  const handleDelete = (MaSV) => {
-    // Sending DELETE request to API
-    fetch(`https://be1-fizs.onrender.com/sinhvien/${MaSV}`, {
-        method: 'DELETE',
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.message === 'Xóa sinh viên thành công') {
-            // Remove the deleted student from the state
-            setStudents((prevStudents) =>
-                prevStudents.filter(student => student.MaSV !== MaSV)
-            );
-            alert('Sinh viên đã được xóa');
-        } else {
-            alert(data.message); // If there's an issue, show the message
-        }
-    })
-    .catch((error) => {
-        console.error('Error deleting student:', error);
-        alert('Có lỗi xảy ra khi xóa sinh viên.');
-    });
+const handleDelete = (MaSV) => {
+  // Yêu cầu người dùng xác nhận trước khi xóa
+  const confirmDelete = window.confirm("Bạn chắc chắn muốn xóa sinh viên này?(Nếu xóa là sẽ xóa hết điểm liên quan đến sinh viên)");
+
+  if (confirmDelete) {
+      // Nếu người dùng xác nhận, gửi yêu cầu DELETE đến API
+      fetch(`https://be1-fizs.onrender.com/${MaSV}?confirm=true`, {
+          method: 'DELETE',
+      })
+      .then(response => response.json())
+      .then(data => {
+          if (data.message === 'Xóa sinh viên thành công') {
+              setStudents((prevStudents) =>
+                  prevStudents.filter(student => student.MaSV !== MaSV)
+              );
+              alert('Sinh viên đã được xóa');
+          } else {
+              alert(data.message);
+          }
+      })
+      .catch((error) => {
+          console.error('Error deleting student:', error);
+          alert('Có lỗi xảy ra khi xóa sinh viên.');
+      });
+  } else {
+      // Nếu người dùng không xác nhận, không làm gì cả
+      alert('Hủy bỏ thao tác xóa.');
+  }
 };
+
   return (
     <Box sx={{ display: 'flex' }}>
       <Sidebar />
@@ -250,8 +239,6 @@ const Students = () => {
                     <TableCell>Lớp</TableCell>
                     <TableCell>Giới tính</TableCell>
                     <TableCell>Email</TableCell>
-                    <TableCell>Ngày sinh</TableCell>
-                    <TableCell>Số điện thoại</TableCell>
                     <TableCell align="center">Thao tác</TableCell>
                   </TableRow>
                 </TableHead>
@@ -263,8 +250,6 @@ const Students = () => {
                       <TableCell>{student.MaLop}</TableCell>
                       <TableCell>{student.GioiTinh}</TableCell>
                       <TableCell>{student.Email}</TableCell>
-                      <TableCell>{convertToVietnamDate(student.NgaySinh)}</TableCell>
-                      <TableCell>{student.SoDT}</TableCell>
                       <TableCell align="center">
                         <IconButton color="primary" onClick={() => handleOpenDialog(student)}>
                           <EditIcon />
@@ -285,15 +270,27 @@ const Students = () => {
           <DialogTitle>{selectedStudent ? 'Chỉnh sửa sinh viên' : 'Thêm sinh viên mới'}</DialogTitle>
           <DialogContent>
             <Box sx={{ mt: 2 }}>
+
+
               <TextField
                 fullWidth
                 label="Mã sinh viên"
-                value={formData.id}
-                onChange={(e) => setFormData({ ...formData, id: e.target.value })}
+                value={formData.id.replace(/^DH/, '')} // chỉ hiển thị phần số
+                onChange={(e) => {
+                  const so = e.target.value.replace(/\D/g, ''); // chỉ cho phép số
+                  setFormData({ ...formData, 
+                    id: `DH${so}`,
+                    email: `${`DH${so}`.toLowerCase()}@student.stu.edu.vn`, });  // lưu lại với tiền tố DH
+                }}
                 margin="normal"
                 required
                 disabled={selectedStudent}
+                InputProps={{
+                  startAdornment: <InputAdornment position="start">DH</InputAdornment>,
+                }}
               />
+
+
               <TextField
                 fullWidth
                 label="Họ và tên"
@@ -331,15 +328,8 @@ const Students = () => {
                 fullWidth
                 label="Email"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 margin="normal"
-              />
-              <TextField
-                fullWidth
-                label="Số điện thoại"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                margin="normal"
+                disabled // không cho nhập tay
               />
             </Box>
           </DialogContent>

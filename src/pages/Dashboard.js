@@ -1,99 +1,179 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Container,
   Grid,
   Paper,
   Typography,
+  Card,
+  CardContent,
+  List,
+  ListItem,
+  ListItemText,
+  Divider,
 } from '@mui/material';
-import PeopleIcon from '@mui/icons-material/People';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
-import Sidebar from '../components/Sidebar';
-
-const StatCard = ({ icon, value, label }) => (
-  <Paper
-    elevation={2}
-    sx={{
-      p: 3,
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      bgcolor: 'white',
-      borderRadius: 2,
-    }}
-  >
-    <Box sx={{ color: '#1976d2', mb: 1 }}>{icon}</Box>
-    <Typography variant="h4" component="div" gutterBottom>
-      {value}
-    </Typography>
-    <Typography color="text.secondary">{label}</Typography>
-  </Paper>
-);
-
+import {
+  People as PeopleIcon,
+  School as SchoolIcon,
+  Assignment as AssignmentIcon,
+  Notifications as NotificationsIcon,
+} from '@mui/icons-material';
 
 const Dashboard = () => {
-  const [totalStudents, setTotalStudents] = useState(0);
-  const [subjectsCount, setSubjectsCount] = useState(0);
-  // Fetch the total number of students from the API
+  const [stats, setStats] = useState([]);
+
+  const [recentActivities] = useState([
+    {
+      id: 1,
+      type: 'Điểm danh',
+      description: 'Sinh viên Nguyễn Văn A đã điểm danh môn Lập trình web',
+      time: '5 phút trước',
+    },
+    {
+      id: 2,
+      type: 'Nộp bài',
+      description: 'Sinh viên Trần Thị B đã nộp bài tập môn Cơ sở dữ liệu',
+      time: '10 phút trước',
+    },
+    {
+      id: 3,
+      type: 'Đăng ký môn',
+      description: 'Sinh viên Lê Văn C đã đăng ký môn học Trí tuệ nhân tạo',
+      time: '15 phút trước',
+    },
+  ]);
+
   useEffect(() => {
-    const fetchStudents = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch('https://be1-fizs.onrender.com/sinhvien'); // Replace with your actual API URL
+        const response = await fetch('https://be1-fizs.onrender.com/thongke');
         const data = await response.json();
-        setTotalStudents(data.length); // Assuming data is an array of students
+  
+        setStats({
+          totalStudents: data.totalStudents,
+          totalCourses: data.totalCourses,
+          averageGrade: data.averageGrade,
+        });
       } catch (error) {
-        console.error('Error fetching student data:', error);
+        console.error('Lỗi khi lấy dữ liệu:', error);
       }
     };
-    const fetchMonHoc = async () => {
-      try {
-        const response = await fetch('https://be1-fizs.onrender.com/MonHoc'); // Replace with your actual API URL
-        const data = await response.json();
-        setSubjectsCount(data.length); // Assuming data is an array of students
-      } catch (error) {
-        console.error('Error fetching student data:', error);
-      }
-    };
-    fetchMonHoc();
-    fetchStudents();
-  }, []); // Empty dependency array ensures it only runs once
+  
+    fetchData();
+  }, []);
+  
+
+  const StatCard = ({ icon, title, value, color }) => (
+    <Card sx={{ height: '100%', bgcolor: color, color: 'white' }}>
+      <CardContent>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          {icon}
+          <Typography variant="h6" sx={{ ml: 1 }}>
+            {title}
+          </Typography>
+        </Box>
+        <Typography variant="h4" component="div">
+          {value}
+        </Typography>
+      </CardContent>
+    </Card>
+  );
 
   return (
-    <Box sx={{ display: 'flex' }}>
-      <Sidebar />
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          p: 3,
-          ml: '240px',
-          bgcolor: '#f5f5f5',
-          minHeight: '100vh',
-        }}
-      >
-        <Container maxWidth="lg">
-          <Typography variant="h4" sx={{ mb: 4 }}>
-            Tổng quan
-          </Typography>
-          
-          <Grid container spacing={3}>
-            <Grid item xs={12} sm={6} md={6}>
-              <StatCard
-                icon={<PeopleIcon sx={{ fontSize: 40 }} />}
-                value={totalStudents} // Dynamically display the number of students
-                label="Tổng số sinh viên"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={6}>
-              <StatCard
-                icon={<MenuBookIcon sx={{ fontSize: 40 }} />}
-                value={subjectsCount}
-                label="Môn học"
-              />
-            </Grid>
-          </Grid>
-        </Container>
-      </Box>
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h4" sx={{ mb: 4, fontWeight: 600, color: '#1a2f4d' }}>
+        Tổng quan hệ thống
+      </Typography>
+
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} md={4}>
+          <StatCard
+            icon={<PeopleIcon fontSize="large" />}
+            title="Tổng số sinh viên"
+            value={stats.totalStudents}
+            color="#2196F3"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={4}>
+          <StatCard
+            icon={<SchoolIcon fontSize="large" />}
+            title="Số môn học"
+            value={stats.totalCourses}
+            color="#4CAF50"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={4}>
+          <StatCard
+            icon={<AssignmentIcon fontSize="large" />}
+            title="Điểm trung bình"
+            value={stats.averageGrade}
+            color="#FF9800"
+          />
+        </Grid>
+      </Grid>
+
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 2, height: '100%' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <NotificationsIcon color="primary" />
+              <Typography variant="h6" sx={{ ml: 1 }}>
+                Hoạt động gần đây
+              </Typography>
+            </Box>
+            <List>
+              {recentActivities.map((activity, index) => (
+                <React.Fragment key={activity.id}>
+                  <ListItem>
+                    <ListItemText
+                      primary={activity.type}
+                      secondary={
+                        <>
+                          <Typography component="span" variant="body2" color="text.primary">
+                            {activity.description}
+                          </Typography>
+                          <Typography component="span" variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                            {activity.time}
+                          </Typography>
+                        </>
+                      }
+                    />
+                  </ListItem>
+                  {index < recentActivities.length - 1 && <Divider />}
+                </React.Fragment>
+              ))}
+            </List>
+          </Paper>
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 2, height: '100%' }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>
+              Thông báo quan trọng
+            </Typography>
+            <List>
+              <ListItem>
+                <ListItemText
+                  primary="Đăng ký học phần học kỳ 2 năm 2023-2024"
+                  secondary="Thời gian đăng ký: 15/12/2023 - 30/12/2023"
+                />
+              </ListItem>
+              <Divider />
+              <ListItem>
+                <ListItemText
+                  primary="Lịch thi cuối kỳ"
+                  secondary="Đã cập nhật lịch thi cuối kỳ học kỳ 1 năm 2023-2024"
+                />
+              </ListItem>
+              <Divider />
+              <ListItem>
+                <ListItemText
+                  primary="Thông báo nghỉ Tết"
+                  secondary="Lịch nghỉ Tết Nguyên đán 2024: 08/02/2024 - 22/02/2024"
+                />
+              </ListItem>
+            </List>
+          </Paper>
+        </Grid>
+      </Grid>
     </Box>
   );
 };

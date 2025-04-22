@@ -161,7 +161,7 @@ const handleDelete = (MaSV) => {
 
   if (confirmDelete) {
       // Nếu người dùng xác nhận, gửi yêu cầu DELETE đến API
-      fetch(`https://be1-fizs.onrender.com/${MaSV}?confirm=true`, {
+      fetch(`https://be1-fizs.onrender.com/sinhvien/${MaSV}?confirm=true`, {
           method: 'DELETE',
       })
       .then(response => response.json())
